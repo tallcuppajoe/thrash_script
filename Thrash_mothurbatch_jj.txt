@@ -1,0 +1,69 @@
+#####Thrash Batch file for running Illumina MiSeq 16S rRNA amplicon data through Mothur##########
+## You will need to create a .files file. In the newer versions of Mothur you can do this automatically. I created my own. 
+## Also you will need to create your reference file. We use Silva (preferred for water organisms). See Pat Schloss' instructions on his website:
+## http://blog.mothur.org/2015/12/03/SILVA-v123-reference-files/
+## Lastly, In step 3, screen.seqs, the size of the read depends on what you are sequencing. We use PE 250. Look at Summary.seqs
+## in step 2 below to get an exact idea of the size of your reads. 
+
+###############################################
+# Michael Henson's Mothur Batch file.         #
+# File names should be modified to fit        #
+# your data.                                   #
+###############################################
+
+
+#BEGIN MOTHUR RUN#
+
+make.contigs(file=Thrash_16S.files, processors=16)
+summary.seqs(fasta=Thrash_16S.trim.contigs.fasta)
+screen.seqs(fasta=Thrash_16S.trim.contigs.fasta, group=Thrash_16S.contigs.groups, summary=Thrash_16S.trim.contigs.summary, maxambig=0, maxlength=254, minlength=251, maxhomop=8)
+unique.seqs(fasta=Thrash_16S.trim.contigs.good.fasta)
+summary.seqs(fasta=Thrash_16S.trim.contigs.good.unique.fasta, name=Thrash_16S.trim.contigs.good.names)
+count.seqs(name=Thrash_16S.trim.contigs.good.names)
+count.groups(group=Thrash_16S.contigs.good.groups)
+align.seqs(fasta=Thrash_16S.trim.contigs.good.unique.fasta, reference=silva.nr_v119.pcr.unique.align)
+remove.seqs(fasta=Thrash_16S.trim.contigs.good.unique.align, name=Thrash_16S.trim.contigs.good.names, group=Thrash_16S.contigs.good.groups, accnos=Thrash_16S.trim.contigs.good.unique.flip.accnos)
+count.seqs(name=Thrash_16S.trim.contigs.good.pick.names, group=Thrash_16S.contigs.good.pick.groups)
+summary.seqs(fasta=Thrash_16S.trim.contigs.good.unique.pick.align, count=Thrash_16S.trim.contigs.good.pick.count_table)
+screen.seqs(fasta=Thrash_16S.trim.contigs.good.unique.pick.align, count=Thrash_16S.trim.contigs.good.pick.count_table, summary=Thrash_16S.trim.contigs.good.unique.pick.summary, start=1968, end=11550)
+summary.seqs(fasta=Thrash_16S.trim.contigs.good.unique.pick.good.align, count=Thrash_16S.trim.contigs.good.pick.good.count_table)
+filter.seqs(fasta=Thrash_16S.trim.contigs.good.unique.pick.good.align, vertical=T)
+unique.seqs(fasta=Thrash_16S.trim.contigs.good.unique.pick.good.filter.fasta, count=Thrash_16S.trim.contigs.good.pick.good.count_table)
+pre.cluster(fasta=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.fasta, count=Thrash_16S.trim.contigs.good.unique.pick.good.filter.count_table, diffs=2)
+chimera.uchime(fasta=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.fasta, count=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.count_table, dereplicate=t, processors=16)
+remove.seqs(fasta=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.fasta, accnos=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.uchime.accnos)
+summary.seqs(fasta=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.fasta, count=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.uchime.pick.count_table)
+classify.seqs(fasta=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.fasta, count=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.uchime.pick.count_table, reference=silva.nr_v119.align, taxonomy=silva.nr_v119.tax, cutoff=80)
+remove.lineage(fasta=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.fasta, count=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.uchime.pick.count_table, taxonomy=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.pick.wang.taxonomy, taxon=Chloroplast-Mitochondria-unknown-Eukaryota)
+cluster.split(fasta=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.pick.fasta, count=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.uchime.pick.pick.count_table, taxonomy=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.wang.pick.taxonomy, splitmethod=classify, taxlevel=4, cutoff=0.15, processors=16)
+make.shared(list=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.pick.an.unique_list.list, count=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.uchime.pick.pick.count_table, label=0.03)
+classify.otu(list=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.pick.an.unique_list.list, count=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.uchime.pick.pick.count_table, taxonomy=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.wang.pick.taxonomy, label=0.03)
+
+### The files we use for PhyloSeq (R program for analysis) and Others are the following:
+# Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.pick.an.unique_list.shared
+# Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.uchime.pick.pick.count_table
+# Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.pick.an.unique_list.0.03.cons.tax.summary
+# Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.pick.an.unique_list.0.03.cons.taxonomy
+# Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.fasta
+
+#The .shared file is the OTU table with abundances. The Table is too large for excel so you will need to tranpose it. this can be achieved via the following:
+awk '
+{
+    for (i=1; i<=NF; i++)  {
+        a[NR,i] = $i
+    }
+}
+NF>p { p = NF }
+END {   
+    for(j=1; j<=p; j++) {
+        str=a[1,j]
+        for(i=2; i<=NR; i++){
+            str=str" "a[i,j];
+        }
+        print str
+    }
+}' Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.pick.an.unique_list.shared > Thrash_OTU.txt
+
+
+# Get OTU Rep fasta file for get OTU
+get.oturep(method=abundance, count=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.uchime.pick.pick.count_table, list=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.pick.an.unique_list.list, fasta=Thrash_16S.trim.contigs.good.unique.pick.good.filter.unique.precluster.pick.pick.fasta, label=0.03)
